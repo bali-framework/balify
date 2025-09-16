@@ -7,8 +7,8 @@ from fastapi_pagination import LimitOffsetPage
 from pydantic import BaseModel
 from starlette import status
 
-from bali.generic_routes import pick_route, list_, create_, get_, update_, delete_
-from bali.schemas import ResultResponse
+from .generic_routes import pick_route, list_, create_, get_, update_, delete_
+from .schemas import ResultResponse
 
 
 GENERIC_ACTIONS = [

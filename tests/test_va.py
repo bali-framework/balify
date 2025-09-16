@@ -4,11 +4,11 @@ from starlette import status
 
 
 def test_va_import():
-    from bali import va  # noqa
+    from balify import va  # noqa
 
 
 def test_serve():
-    from bali import va
+    from balify import va
 
     class User(va):
         name: str

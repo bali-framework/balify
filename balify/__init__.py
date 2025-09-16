@@ -4,8 +4,8 @@ import humps  # noqa
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 
-from bali.resource import RouterGenerator
-from bali.utils import pluralize
+from .resource import RouterGenerator
+from .utils import pluralize
 
 
 class _VAMeta(type):

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from bali import va
+from balify import va
 
 
 def test_data_define_should_as_orm():
