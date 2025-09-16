@@ -143,12 +143,12 @@ def create_(router_generator) -> Callable:
     resource = router_generator.cls()
     action_func = getattr(resource, "create")
 
-    def route(schema_in: resource.schema, request: Request = None):
+    def route(schema_in: resource.schema, request: Request = None):  # type: ignore
         resource._request = request
         router_generator.check_permissions(resource)
         return action_func(schema_in)
 
-    async def async_route(schema_in: resource.schema, request: Request = None):
+    async def async_route(schema_in: resource.schema, request: Request = None):  # type: ignore
         resource._request = request
         router_generator.check_permissions(resource)
         return await action_func(schema_in)

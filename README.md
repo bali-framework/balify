@@ -2,8 +2,8 @@
   <img src="https://raw.githubusercontent.com/bali-framework/bali/master/docs/img/bali.png" alt='bali framework' />
 </p>
 <p align="center">
-    <b>bali-va</b><br />
-    <em>🏝 Minimalist declarative API.</em>
+    <b>balify</b><br />
+    <em>🏝 Minimalist declarative API.</em>    
 </p>
 
 <p align="center">
@@ -19,3 +19,6 @@
 </p>
 
 ---
+
+> The framework's conventions are opinionated and follow industry-leading practices.
+> 
