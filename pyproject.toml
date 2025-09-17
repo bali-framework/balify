@@ -21,10 +21,10 @@ dev = [
 ]
 
 [tool.hatch.build.targets.sdist]
-include = ["bali"]
+include = ["balify"]
 
 [tool.hatch.build.targets.wheel]
-include = ["bali"]
+include = ["balify"]
 
 [build-system]
 requires = ["hatchling"]
