@@ -12,6 +12,7 @@ dependencies = [
     "pyhumps~=3.8",
     "fastapi-pagination>=0.12,<0.13",
     "typer>=0.15.0,<1",
+    "sqlmodel>=0.0.25",
 ]
 
 [dependency-groups]
