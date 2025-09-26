@@ -37,14 +37,9 @@ def action(methods=None, detail=None, **kwargs):
     :param methods:
     :param detail:
     :param kwargs:
-        http_only: the action only support http
-        rpc_only: the action only support rpc
     """
     methods = ["get"] if (methods is None) else methods
     methods = [method.lower() for method in methods]
-
-    http_only = kwargs.get("http_only", False)
-    rpc_only = kwargs.get("rpc_only", False)
 
     class Action:
         def __init__(self, func):
@@ -55,10 +50,6 @@ def action(methods=None, detail=None, **kwargs):
             setattr(owner, name, compatible_method(self.func))
 
             # Append actions to Resource._actions
-            # Only for http actions
-            if rpc_only:
-                return
-
             try:
                 schema_in_annotation = get_schema_in(self.func)
             except ValueError:
