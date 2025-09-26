@@ -3,23 +3,23 @@ from fastapi.testclient import TestClient
 from starlette import status
 
 
-def test_va_import():
-    from balify import va  # noqa
+def test_imports():
+    from balify import O, o  # noqa
 
 
 def test_serve():
-    from balify import va
+    from balify import O, o
 
-    class User(va):
+    class User(O):
         name: str
         age: int
         email: str
         create_at: datetime
         updated_at: datetime
 
-    va.serve(User)
+    o.serve(User)
 
-    client = TestClient(va._application)
+    client = TestClient(o._app)
 
     response = client.get("/users")
     assert response.status_code == status.HTTP_200_OK
