@@ -3,6 +3,7 @@ import logging
 from datetime import date, datetime  # Entity field type
 
 import humps  # noqa
+from importlib.metadata import version as _version, PackageNotFoundError
 from fastapi import FastAPI, Response, status
 from fastapi_pagination import add_pagination
 from sqlmodel import Field, SQLModel, Session, create_engine, select
@@ -10,6 +11,13 @@ from sqlmodel import Field, SQLModel, Session, create_engine, select
 from .decorators import action
 from .resource import RouterGenerator
 from .utils import pluralize, make_optional_model
+
+
+try:
+    __version__ = _version("balify")
+except PackageNotFoundError:
+    # fallback for local editable installs or when package metadata not available
+    __version__ = "0.0.0"
 
 
 sqlite_file_name = "database.db"

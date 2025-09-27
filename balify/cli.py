@@ -11,6 +11,8 @@ import uvicorn
 
 from pathlib import Path
 
+from . import __version__
+
 
 app = typer.Typer()
 
@@ -41,9 +43,20 @@ def _load_app_from_main(path: Path):
     raise RuntimeError("main.py found but no 'app' variable inside")
 
 
-@app.callback()
-def callback():
+@app.callback(invoke_without_command=True)
+def callback(
+    ctx: typer.Context,
+    version: bool = typer.Option(
+        False, "--version", "-v", help="Show version and exit"
+    ),
+):
     """Start Balify App"""
+    if version:
+        typer.echo(__version__)
+        raise typer.Exit()
+    # If invoked without subcommand, keep going (Typer will call subcommands)
+    if ctx.invoked_subcommand is None:
+        return
 
 
 @app.command()
