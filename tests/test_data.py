@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from balify import va
+from balify import O
 
 
 def test_data_define_should_as_orm():
-    class User(va):
+    class User(O):
         name: str
         age: int
         email: str

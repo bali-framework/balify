@@ -24,7 +24,6 @@ def pick_route(func, async_route, route):
     return async_route if inspect.iscoroutinefunction(func) else route
 
 
-# noinspection PyUnresolvedReferences,PyProtectedMember
 def list_(router_generator) -> Callable:
     """
     list action default using fastapi-pagination to process paginate
@@ -40,27 +39,27 @@ def list_(router_generator) -> Callable:
 
         # parse filters
         filters = {}
-        for k, v in params.items():
-            if k not in router_generator._ordered_filters:
-                continue
-            # noinspection PyBroadException
-            try:
-                # Convert param and retrieve param
-                params_converter = router_generator._ordered_filters.get(k)
-                if isinstance(params_converter, typing._GenericAlias):
-                    params_converter = params_converter.__args__[0]
-                filters[k] = params_converter(v)
-            except Exception as ex:
-                logging.warning(
-                    "Query params `%s`(value: %s) type convert failed, "
-                    "exception: %s",
-                    k,
-                    v,
-                    ex,
-                )
-                continue
+        # for k, v in params.items():
+        #     if k not in router_generator._ordered_filters:
+        #         continue
+        #     # noinspection PyBroadException
+        #     try:
+        #         # Convert param and retrieve param
+        #         params_converter = router_generator._ordered_filters.get(k)
+        #         if isinstance(params_converter, typing._GenericAlias):
+        #             params_converter = params_converter.__args__[0]
+        #         filters[k] = params_converter(v)
+        #     except Exception as ex:
+        #         logging.warning(
+        #             "Query params `%s`(value: %s) type convert failed, "
+        #             "exception: %s",
+        #             k,
+        #             v,
+        #             ex,
+        #         )
+        #         continue
 
-        schema_in = ListRequest(**params, filters=filters)
+        # schema_in = ListRequest(**params, filters=filters)
 
         # result = action_func(schema_in)
         result = action_func()

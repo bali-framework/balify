@@ -3,7 +3,7 @@ name = "balify"
 version = "0.0.1"
 description = ""
 authors = [{ name = "Josh", email = "josh.yu_8@live.com" }]
-requires-python = "~=3.10"
+requires-python = ">=3.10,<3.14"
 readme = "README.md"
 dependencies = [
     "fastapi>=0.106,<1",
@@ -11,6 +11,8 @@ dependencies = [
     "sqlalchemy~=2.0",
     "pyhumps~=3.8",
     "fastapi-pagination>=0.12,<0.13",
+    "typer>=0.15.0,<1",
+    "sqlmodel>=0.0.25",
 ]
 
 [dependency-groups]
@@ -21,11 +23,14 @@ dev = [
 ]
 
 [tool.hatch.build.targets.sdist]
-include = ["bali"]
+include = ["balify"]
 
 [tool.hatch.build.targets.wheel]
-include = ["bali"]
+include = ["balify"]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[project.scripts]
+ba = "balify.cli:app"

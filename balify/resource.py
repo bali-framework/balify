@@ -7,6 +7,10 @@ from fastapi_pagination import LimitOffsetPage
 from pydantic import BaseModel
 from starlette import status
 
+from .decorators import action
+from .utils import transform_to_sqlmodel
+
+
 from .generic_routes import pick_route, list_, create_, get_, update_, delete_
 from .schemas import ResultResponse
 
@@ -23,7 +27,7 @@ GENERIC_ACTIONS = [
 class Generator:
     @property
     def resource_name(self):
-        return self.cls.__name__.replace("Resource", "")
+        return self.cls.__name__.replace("Resource", "")  # type: ignore
 
     @property
     def primary_key(self):
@@ -36,15 +40,23 @@ class RouterGenerator(Generator):
     """
 
     def __init__(self, cls):
-        self.cls = cls
+        self.cls = cls  # `cls` is Entity
+
         self.router = APIRouter()
         # self._ordered_filters = self._get_ordered_filters()
         self._ordered_filters = {}
 
+        # Provide class var `schema` to Entity
+        self.cls.schema = transform_to_sqlmodel(cls)
+
+        # # Bind Generic actions to Entity
+        # self.cls.create = create
+
     def __call__(self):
         actions = GENERIC_ACTIONS
-        actions = ["list"]
+        actions = ["list", "get", "create", "update"]
         for action in actions:
+            print("--> Add router %s" % str(action))
             self.add_route(action)
         return self.router
 
@@ -153,7 +165,8 @@ class RouterGenerator(Generator):
                 "",
                 list_(self),
                 methods=["GET"],
-                response_model=LimitOffsetPage[self.cls],
+                # response_model=LimitOffsetPage[self.cls],
+                response_model=list[self.cls.schema],
                 summary=f"List {self.resource_name}",
             )
         elif action == "create":
