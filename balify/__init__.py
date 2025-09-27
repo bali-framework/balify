@@ -3,7 +3,7 @@ import logging
 from datetime import date, datetime  # Entity field type
 
 import humps  # noqa
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from fastapi_pagination import add_pagination
 
 from .resource import RouterGenerator
@@ -158,10 +158,14 @@ class O(metaclass=_OMeta):
         with Session(engine) as session:
             statement = select(self.schema).where(self.schema.id == pk)  # type: ignore
             target = session.exec(statement).first()
-            session.delete(target)
-            session.commit()
+            if target:
+                session.delete(target)
+                session.commit()
 
-        return {"result": True}
+        # In previou `bali-core`, it return {"result": True} to compatible with gRPC
+        # It can be simpler with 204 status response
+        # return {"result": True}
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # I found that `O, o` in `from balify import O, o` look like an cute emontion.

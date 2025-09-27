@@ -54,7 +54,6 @@ class RouterGenerator(Generator):
 
     def __call__(self):
         actions = GENERIC_ACTIONS
-        actions = ["list", "get", "create", "update"]
         for action in actions:
             print("--> Add router %s" % str(action))
             self.add_route(action)
