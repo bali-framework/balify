@@ -7,6 +7,7 @@ from importlib.metadata import version as _version, PackageNotFoundError
 from fastapi import FastAPI, Response, status
 from fastapi_pagination import add_pagination, Params
 from fastapi_pagination.ext.sqlalchemy import paginate as sa_paginate
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Field, SQLModel, Session, create_engine, select
 
 from .decorators import action
@@ -21,11 +22,17 @@ except PackageNotFoundError:
     __version__ = "0.0.0"
 
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+# Read database config from `.env` or envirenment
+class Settings(BaseSettings):  # type: ignore
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    database_url: str = "sqlite:///database.db"
 
 
-engine = create_engine(sqlite_url, echo=True)
+settings = Settings()
+
+print("--> Read database url: %s" % settings.database_url)
+engine = create_engine(settings.database_url, echo=True)
 
 
 def create_db_and_tables():
