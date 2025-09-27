@@ -78,17 +78,6 @@ class O(metaclass=_OMeta):
 
     @classmethod
     def serve(cls, *entities) -> None:
-
-        from fastapi import APIRouter
-
-        router = APIRouter()
-
-        @router.get("/")
-        def hello():
-            return {"Hello": "World", "Powered by": "balify router"}
-
-        cls._app.include_router(router, prefix="/router1")
-
         for entity in entities:
             print("--> Serve entity `%s` in App(%s)" % (str(entity), id(cls._app)))
             cls._app.include_router(entity.as_router(), prefix="/users")
