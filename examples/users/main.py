@@ -1,11 +1,12 @@
-from balify import *
+from datetime import datetime
+from balify import O, o
 
 
 class User(O):
     name: str
     age: int
     email: str
-    # create_at: datetime
+    create_at: datetime
     # updated_at: datetime
 
 
