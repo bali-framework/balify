@@ -5,13 +5,11 @@ from datetime import date, datetime  # Entity field type
 import humps  # noqa
 from fastapi import FastAPI, Response, status
 from fastapi_pagination import add_pagination
-
-from .resource import RouterGenerator
-from .utils import pluralize
+from sqlmodel import Field, SQLModel, Session, create_engine, select
 
 from .decorators import action
-
-from sqlmodel import Field, SQLModel, Session, create_engine, select
+from .resource import RouterGenerator
+from .utils import pluralize, make_optional_model
 
 
 sqlite_file_name = "database.db"
@@ -126,7 +124,10 @@ class O(metaclass=_OMeta):
             # session.add(schema_in)
 
             # Option 2: Create New schema instance
-            target = self.schema(**schema_in.model_dump())  # type: ignore
+            # Why use model_validate?
+            # Because SQLModel not validate data when `table=True`
+            # ref: https://github.com/fastapi/sqlmodel/issues/453
+            target = self.schema.model_validate(schema_in.model_dump())  # type: ignore
             session.add(target)
             session.commit()
             session.refresh(target)
@@ -143,7 +144,9 @@ class O(metaclass=_OMeta):
             statement = select(self.schema).where(self.schema.id == pk)  # type: ignore
             target = session.exec(statement).first()
 
-            for k, v in schema_in.model_dump().items():  # type: ignore
+            optional_model = make_optional_model(self.schema)  # type: ignore
+            optional_schema = optional_model.model_validate(schema_in.model_dump())  # type: ignore
+            for k, v in optional_schema.model_dump().items():  # type: ignore
                 if v is not None:
                     setattr(target, k, v)
 

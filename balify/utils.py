@@ -1,7 +1,10 @@
 import re
-from typing import Any
+from datetime import datetime
+
+from typing import Any, Optional, Type, Union, get_type_hints, get_origin, get_args
 
 from pydantic import BaseModel
+from sqlmodel import SQLModel, Field
 from sqlmodel.main import SQLModelMetaclass
 
 
@@ -39,22 +42,14 @@ def parse_dict(item: Any, schema: BaseModel = None):
     return item.dict()
 
 
-from typing import get_type_hints, Optional, Dict, Any, Type, ClassVar
-from datetime import datetime
-from sqlmodel import SQLModel, Field
-from sqlalchemy import Integer, String, DateTime
-
-TYPE_MAP = {int: Integer, str: String, datetime: DateTime}
-
-
 def transform_to_sqlmodel(
     cls: Type,
     table_name: Optional[str] = None,
 ) -> Type[SQLModel]:
     annotations = get_type_hints(cls, include_extras=False)
 
-    attrs: Dict[str, Any] = {"id": Field(primary_key=True)}
-    ann: Dict[str, Any] = {"id": int}
+    attrs: Dict[str, Any] = {"id": Field(default=None, primary_key=True)}
+    ann: Dict[str, Any] = {"id": int | None}
 
     if table_name is None:
         table_name = cls.__name__.lower()
@@ -69,9 +64,22 @@ def transform_to_sqlmodel(
     model_name = f"{cls.__name__}SQLModel"
 
     # An equivalent approach created directly using a metaclass
-    sqlmodel_cls = type(model_name, (SQLModel,), attrs, table=True)
+    sqlmodel_cls = SQLModelMetaclass(model_name, (SQLModel,), attrs, table=True)
 
     return sqlmodel_cls
+
+
+def make_optional_model(cls: Type[BaseModel]) -> Type[BaseModel]:
+    """Make Pydantic all fields optional"""
+    annotations = {}
+    for name, typ in cls.model_fields.items():  # v2: model_fields provide fields define
+        t = typ.annotation
+        if get_origin(t) is Union and type(None) in get_args(t):
+            annotations[name] = t
+        else:
+            annotations[name] = Optional[t]
+    attrs = {"__annotations__": annotations}
+    return type(f"Partial{cls.__name__}", (BaseModel,), attrs)
 
 
 # # example base class O (placeholder)

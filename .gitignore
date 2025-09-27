@@ -162,4 +162,4 @@ cython_debug/
 .vscode
 
 # examples' testing database
-.database.db
+database.db

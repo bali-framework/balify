@@ -8,11 +8,9 @@ from pydantic import BaseModel
 from starlette import status
 
 from .decorators import action
-from .utils import transform_to_sqlmodel
-
-
 from .generic_routes import pick_route, list_, create_, get_, update_, delete_
 from .schemas import ResultResponse
+from .utils import transform_to_sqlmodel
 
 
 GENERIC_ACTIONS = [

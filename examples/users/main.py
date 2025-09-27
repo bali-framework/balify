@@ -7,7 +7,7 @@ class User(O):
     age: int
     email: str
     create_at: datetime
-    # updated_at: datetime
+    updated_at: datetime
 
 
 o.serve(User)
