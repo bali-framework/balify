@@ -11,7 +11,18 @@ from .utils import pluralize
 
 from .decorators import action
 
-from sqlmodel import Field, SQLModel, create_engine
+from sqlmodel import Field, SQLModel, Session, create_engine, select
+
+
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
+
+
+engine = create_engine(sqlite_url, echo=True)
+
+
+def create_db_and_tables():
+    SQLModel.metadata.create_all(engine)
 
 
 class _OMeta(type):
@@ -63,7 +74,7 @@ class O(metaclass=_OMeta):
     resource is Restful resource
     """
 
-    schema = None
+    schema = None  # the schema is SQLModel instance
 
     @classmethod
     def serve(cls, *entities) -> None:
@@ -82,21 +93,86 @@ class O(metaclass=_OMeta):
             print("--> Serve entity `%s` in App(%s)" % (str(entity), id(cls._app)))
             cls._app.include_router(entity.as_router(), prefix="/users")
 
+        # Generate all SQLModel schemas to database
+        create_db_and_tables()
+
+    @action()
+    def list(self):
+        """Generic `list` method
+
+        TODO: implement the pagination and filter expressions like `bali`
+
+        User.query().filter(*get_filters_expr(User, **schema_in.filters))
+
+        """
+        with Session(engine) as session:
+            statement = select(self.schema)
+            targets = session.exec(statement).all()
+            print("--> Generic list method get targets: %s" % targets)
+            return targets
+
+    @action()
+    def get(self, pk=None):
+
+        with Session(engine) as session:
+            statement = select(self.schema).where(self.schema.id == pk)  # type: ignore
+            target = session.exec(statement).first()
+
+        return target
+
     @action()
     def create(self, schema_in):
-        return {"id": schema_in.id, "content": schema_in.content}
+        """Generic create method"""
+        print("--> self if %s(type: %s)" % (self, type(self)))
+        print("--> self.schema: %s" % self.schema)
+        print("--> param schema_in: %s" % schema_in)
+        # self.schema(**schema_in)  # type: ignore
 
-    # def list(self):
-    #     return {
-    #         "items": [],
-    #         "total": 0,
-    #         "limit": 10,
-    #         "offset": 1,
-    #     }
+        with Session(engine) as session:
 
-    # @action()
-    # def list(self, schema_in):
-    #     return GREETERS[: schema_in.limit]
+            # # Option 1: Commit schema_in directly
+            # # sqlalchemy.orm.exc.DetachedInstanceError:
+            # # Instance <UserSQLModel at 0x7748e76918a0> is not bound to a Session;
+            # # attribute refresh operation cannot proceed (Background on this error at: https://sqlalche.me/e/20/bhk3)
+            # session.add(schema_in)
+
+            # Option 2: Create New schema instance
+            target = self.schema(**schema_in.model_dump())  # type: ignore
+            session.add(target)
+            session.commit()
+            session.refresh(target)
+
+            print("--> target: %s (type: %s)" % (target, type(target)))
+            print("--> target.id: %d" % target.id)
+
+        return target
+
+    @action()
+    def update(self, schema_in=None, pk=None):
+
+        with Session(engine) as session:
+            statement = select(self.schema).where(self.schema.id == pk)  # type: ignore
+            target = session.exec(statement).first()
+
+            for k, v in schema_in.model_dump().items():  # type: ignore
+                if v is not None:
+                    setattr(target, k, v)
+
+            session.add(target)
+            session.commit()
+            session.refresh(target)
+
+        return target
+
+    @action()
+    def delete(self, pk=None):
+        with Session(engine) as session:
+            statement = select(self.schema).where(self.schema.id == pk)  # type: ignore
+            target = session.exec(statement).first()
+            session.delete(target)
+            session.commit()
+
+        return {"result": True}
 
 
 # I found that `O, o` in `from balify import O, o` look like an cute emontion.
