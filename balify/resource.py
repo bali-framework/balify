@@ -163,7 +163,7 @@ class RouterGenerator(Generator):
                 list_(self),
                 methods=["GET"],
                 # response_model=LimitOffsetPage[self.cls],
-                response_model=list[self.cls.schema],
+                # response_model=list[self.cls.schema],
                 summary=f"List {self.resource_name}",
             )
         elif action == "create":

@@ -5,7 +5,8 @@ from datetime import date, datetime  # Entity field type
 import humps  # noqa
 from importlib.metadata import version as _version, PackageNotFoundError
 from fastapi import FastAPI, Response, status
-from fastapi_pagination import add_pagination
+from fastapi_pagination import add_pagination, Params
+from fastapi_pagination.ext.sqlalchemy import paginate as sa_paginate
 from sqlmodel import Field, SQLModel, Session, create_engine, select
 
 from .decorators import action
@@ -44,8 +45,11 @@ class _OMeta(type):
     def __new__(cls, *args, **kwargs):
         meta = super().__new__(cls, *args, **kwargs)
 
-        meta._app = FastAPI()
+        print("--> _OMeta _app: %s" % id(cls._app))
+
         meta._app = add_pagination(cls._app)
+
+        print("--> add_pagination meta._app: %s" % id(meta._app))
 
         return meta
 
@@ -84,6 +88,7 @@ class O(metaclass=_OMeta):
 
     @classmethod
     def serve(cls, *entities) -> None:
+        print("--> serve App(%s)" % id(cls._app))
         for entity in entities:
             print("--> Serve entity `%s` in App(%s)" % (str(entity), id(cls._app)))
             cls._app.include_router(entity.as_router(), prefix="/users")
@@ -102,9 +107,8 @@ class O(metaclass=_OMeta):
         """
         with Session(engine) as session:
             statement = select(self.schema)
-            targets = session.exec(statement).all()
-            print("--> Generic list method get targets: %s" % targets)
-            return targets
+            # targets = session.exec(statement).all()
+            return sa_paginate(session, statement, Params(page=1, size=10))
 
     @action()
     def get(self, pk=None):
