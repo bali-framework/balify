@@ -8,11 +8,9 @@ from pydantic import BaseModel
 from starlette import status
 
 from .decorators import action
-from .utils import transform_to_sqlmodel
-
-
 from .generic_routes import pick_route, list_, create_, get_, update_, delete_
 from .schemas import ResultResponse
+from .utils import transform_to_sqlmodel
 
 
 GENERIC_ACTIONS = [
@@ -54,7 +52,6 @@ class RouterGenerator(Generator):
 
     def __call__(self):
         actions = GENERIC_ACTIONS
-        actions = ["list", "get", "create", "update"]
         for action in actions:
             print("--> Add router %s" % str(action))
             self.add_route(action)
@@ -165,8 +162,9 @@ class RouterGenerator(Generator):
                 "",
                 list_(self),
                 methods=["GET"],
-                # response_model=LimitOffsetPage[self.cls],
-                response_model=list[self.cls.schema],
+                dependencies=self.cls.dependencies,
+                response_model=LimitOffsetPage[self.cls.schema],
+                # response_model=list[self.cls.schema],
                 summary=f"List {self.resource_name}",
             )
         elif action == "create":
@@ -174,6 +172,7 @@ class RouterGenerator(Generator):
                 "",
                 create_(self),
                 methods=["POST"],
+                dependencies=self.cls.dependencies,
                 response_model=self.cls.schema and Optional[self.cls.schema],
                 summary=f"Create {self.resource_name}",
                 status_code=status.HTTP_201_CREATED,
@@ -183,6 +182,7 @@ class RouterGenerator(Generator):
                 "/{%s}" % self.primary_key,
                 get_(self),
                 methods=["GET"],
+                dependencies=self.cls.dependencies,
                 response_model=self.cls.schema,
                 summary=f"Get {self.resource_name}",
             )
@@ -191,6 +191,7 @@ class RouterGenerator(Generator):
                 "/{%s}" % self.primary_key,
                 update_(self),
                 methods=["PATCH"],
+                dependencies=self.cls.dependencies,
                 response_model=self.cls.schema,
                 summary=f"Update {self.resource_name}",
             )
@@ -199,6 +200,7 @@ class RouterGenerator(Generator):
                 "/{%s}" % self.primary_key,
                 delete_(self),
                 methods=["DELETE"],
+                dependencies=self.cls.dependencies,
                 response_model=ResultResponse,
                 summary=f"Delete {self.resource_name}",
             )

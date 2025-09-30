@@ -1,24 +1,48 @@
 import logging
+import humps  # noqa
+import uuid
 
+from collections.abc import AsyncGenerator
 from datetime import date, datetime  # Entity field type
 
-import humps  # noqa
-from fastapi import FastAPI
-from fastapi_pagination import add_pagination
-
-from .resource import RouterGenerator
-from .utils import pluralize
-
-from .decorators import action
-
+from importlib.metadata import version as _version, PackageNotFoundError
+from fastapi import FastAPI, Depends, Response, status
+from fastapi_pagination import add_pagination, Params
+from fastapi_pagination.ext.sqlalchemy import paginate as sa_paginate
+from fastapi_users import FastAPIUsers
+from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlmodel import Field, SQLModel, Session, create_engine, select
 
+from .decorators import action
+from .resource import RouterGenerator
+from .utils import pluralize, make_optional_model
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+
+try:
+    __version__ = _version("balify")
+except PackageNotFoundError:
+    # fallback for local editable installs or when package metadata not available
+    __version__ = "0.0.0"
 
 
-engine = create_engine(sqlite_url, echo=True)
+# Constats flags
+auth = "auth"
+
+
+# Read database config from `.env` or envirenment
+class Settings(BaseSettings):  # type: ignore
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    database_url: str = "sqlite:///database.db"
+
+
+settings = Settings()
+
+print("--> Read database url: %s" % settings.database_url)
+engine = create_engine(settings.database_url, echo=True)
 
 
 def create_db_and_tables():
@@ -33,13 +57,22 @@ class _OMeta(type):
     TODO: Compare `Metaclass` and `__init_subclass__`, then choose one in for `_OMeta`
     """
 
+    # TODO: FastAPI-Users liftspan in `auth.py`, just like `add_pagination`
     _app = FastAPI()
 
     def __new__(cls, *args, **kwargs):
         meta = super().__new__(cls, *args, **kwargs)
 
-        meta._app = FastAPI()
+        print("--> _OMeta _app: %s" % id(cls._app))
+
         meta._app = add_pagination(cls._app)
+
+        print("--> add_pagination meta._app: %s" % id(meta._app))
+
+        # Register FastAPI-Users routers
+        from .auth import add_users
+
+        meta._app = add_users(meta._app)
 
         return meta
 
@@ -75,26 +108,30 @@ class O(metaclass=_OMeta):
     """
 
     schema = None  # the schema is SQLModel instance
+    dependencies = []  # router depends
 
     @classmethod
     def serve(cls, *entities) -> None:
-
-        from fastapi import APIRouter
-
-        router = APIRouter()
-
-        @router.get("/")
-        def hello():
-            return {"Hello": "World", "Powered by": "balify router"}
-
-        cls._app.include_router(router, prefix="/router1")
-
+        print("--> serve App(%s)" % id(cls._app))
         for entity in entities:
             print("--> Serve entity `%s` in App(%s)" % (str(entity), id(cls._app)))
-            cls._app.include_router(entity.as_router(), prefix="/users")
+            cls._app.include_router(
+                entity.as_router(), prefix=f"/{pluralize(entity.__name__.lower())}"
+            )
 
         # Generate all SQLModel schemas to database
         create_db_and_tables()
+
+    @classmethod
+    def depends(cls, *args, **kwargs):
+        """Depends build-in depends"""
+
+        from .auth import current_active_user
+
+        if auth in args:
+            cls.dependencies = [Depends(current_active_user)]
+
+        return cls
 
     @action()
     def list(self):
@@ -107,9 +144,8 @@ class O(metaclass=_OMeta):
         """
         with Session(engine) as session:
             statement = select(self.schema)
-            targets = session.exec(statement).all()
-            print("--> Generic list method get targets: %s" % targets)
-            return targets
+            # targets = session.exec(statement).all()
+            return sa_paginate(session, statement, Params(page=1, size=10))
 
     @action()
     def get(self, pk=None):
@@ -137,7 +173,10 @@ class O(metaclass=_OMeta):
             # session.add(schema_in)
 
             # Option 2: Create New schema instance
-            target = self.schema(**schema_in.model_dump())  # type: ignore
+            # Why use model_validate?
+            # Because SQLModel not validate data when `table=True`
+            # ref: https://github.com/fastapi/sqlmodel/issues/453
+            target = self.schema.model_validate(schema_in.model_dump())  # type: ignore
             session.add(target)
             session.commit()
             session.refresh(target)
@@ -154,7 +193,9 @@ class O(metaclass=_OMeta):
             statement = select(self.schema).where(self.schema.id == pk)  # type: ignore
             target = session.exec(statement).first()
 
-            for k, v in schema_in.model_dump().items():  # type: ignore
+            optional_model = make_optional_model(self.schema)  # type: ignore
+            optional_schema = optional_model.model_validate(schema_in.model_dump())  # type: ignore
+            for k, v in optional_schema.model_dump().items():  # type: ignore
                 if v is not None:
                     setattr(target, k, v)
 
@@ -169,10 +210,14 @@ class O(metaclass=_OMeta):
         with Session(engine) as session:
             statement = select(self.schema).where(self.schema.id == pk)  # type: ignore
             target = session.exec(statement).first()
-            session.delete(target)
-            session.commit()
+            if target:
+                session.delete(target)
+                session.commit()
 
-        return {"result": True}
+        # In previou `bali-core`, it return {"result": True} to compatible with gRPC
+        # It can be simpler with 204 status response
+        # return {"result": True}
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # I found that `O, o` in `from balify import O, o` look like an cute emontion.
