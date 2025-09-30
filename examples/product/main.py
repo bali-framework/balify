@@ -2,15 +2,14 @@ from datetime import datetime
 from balify import O, o
 
 
-class User(O):
-    name: str
-    age: int
-    email: str
+class Product(O):
+    title: str
+    stock: int
     create_at: datetime
     updated_at: datetime
 
 
-o.serve(User)
+o.serve(Product)
 
 
 # FIXME: Remove the expose app code
