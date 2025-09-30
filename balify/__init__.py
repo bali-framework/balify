@@ -1,15 +1,19 @@
 import logging
+import humps  # noqa
+import uuid
 
+from collections.abc import AsyncGenerator
 from datetime import date, datetime  # Entity field type
 
-import humps  # noqa
 from importlib.metadata import version as _version, PackageNotFoundError
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Depends, Response, status
 from fastapi_pagination import add_pagination, Params
 from fastapi_pagination.ext.sqlalchemy import paginate as sa_paginate
+from fastapi_users import FastAPIUsers
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlmodel import Field, SQLModel, Session, create_engine, select
 
 from .decorators import action
@@ -22,15 +26,6 @@ try:
 except PackageNotFoundError:
     # fallback for local editable installs or when package metadata not available
     __version__ = "0.0.0"
-
-
-# FastAPI-Users models
-class Base(DeclarativeBase):
-    pass
-
-
-class User(SQLAlchemyBaseUserTableUUID, Base):
-    pass
 
 
 # Read database config from `.env` or envirenment
@@ -48,7 +43,6 @@ engine = create_engine(settings.database_url, echo=True)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
-    Base.metadata.create_all(engine)
 
 
 class _OMeta(type):
@@ -59,6 +53,7 @@ class _OMeta(type):
     TODO: Compare `Metaclass` and `__init_subclass__`, then choose one in for `_OMeta`
     """
 
+    # TODO: FastAPI-Users liftspan in `auth.py`, just like `add_pagination`
     _app = FastAPI()
 
     def __new__(cls, *args, **kwargs):
@@ -69,6 +64,11 @@ class _OMeta(type):
         meta._app = add_pagination(cls._app)
 
         print("--> add_pagination meta._app: %s" % id(meta._app))
+
+        # Register FastAPI-Users routers
+        from .auth import add_users
+
+        meta._app = add_users(meta._app)
 
         return meta
 
