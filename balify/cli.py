@@ -1,7 +1,6 @@
 import os
 import sys
 
-import logging
 import importlib.util
 
 
@@ -10,8 +9,6 @@ import typer
 import uvicorn
 
 from pathlib import Path
-
-from . import __version__
 
 
 app = typer.Typer()
@@ -52,6 +49,8 @@ def callback(
 ):
     """Start Balify App"""
     if version:
+        from . import __version__
+
         typer.echo(__version__)
         raise typer.Exit()
     # If invoked without subcommand, keep going (Typer will call subcommands)

@@ -7,7 +7,9 @@ from importlib.metadata import version as _version, PackageNotFoundError
 from fastapi import FastAPI, Response, status
 from fastapi_pagination import add_pagination, Params
 from fastapi_pagination.ext.sqlalchemy import paginate as sa_paginate
+from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.orm import DeclarativeBase
 from sqlmodel import Field, SQLModel, Session, create_engine, select
 
 from .decorators import action
@@ -20,6 +22,15 @@ try:
 except PackageNotFoundError:
     # fallback for local editable installs or when package metadata not available
     __version__ = "0.0.0"
+
+
+# FastAPI-Users models
+class Base(DeclarativeBase):
+    pass
+
+
+class User(SQLAlchemyBaseUserTableUUID, Base):
+    pass
 
 
 # Read database config from `.env` or envirenment
@@ -37,6 +48,7 @@ engine = create_engine(settings.database_url, echo=True)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+    Base.metadata.create_all(engine)
 
 
 class _OMeta(type):
