@@ -162,6 +162,7 @@ class RouterGenerator(Generator):
                 "",
                 list_(self),
                 methods=["GET"],
+                dependencies=self.cls.dependencies,
                 response_model=LimitOffsetPage[self.cls.schema],
                 # response_model=list[self.cls.schema],
                 summary=f"List {self.resource_name}",
@@ -171,6 +172,7 @@ class RouterGenerator(Generator):
                 "",
                 create_(self),
                 methods=["POST"],
+                dependencies=self.cls.dependencies,
                 response_model=self.cls.schema and Optional[self.cls.schema],
                 summary=f"Create {self.resource_name}",
                 status_code=status.HTTP_201_CREATED,
@@ -180,6 +182,7 @@ class RouterGenerator(Generator):
                 "/{%s}" % self.primary_key,
                 get_(self),
                 methods=["GET"],
+                dependencies=self.cls.dependencies,
                 response_model=self.cls.schema,
                 summary=f"Get {self.resource_name}",
             )
@@ -188,6 +191,7 @@ class RouterGenerator(Generator):
                 "/{%s}" % self.primary_key,
                 update_(self),
                 methods=["PATCH"],
+                dependencies=self.cls.dependencies,
                 response_model=self.cls.schema,
                 summary=f"Update {self.resource_name}",
             )
@@ -196,6 +200,7 @@ class RouterGenerator(Generator):
                 "/{%s}" % self.primary_key,
                 delete_(self),
                 methods=["DELETE"],
+                dependencies=self.cls.dependencies,
                 response_model=ResultResponse,
                 summary=f"Delete {self.resource_name}",
             )

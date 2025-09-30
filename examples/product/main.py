@@ -1,5 +1,5 @@
 from datetime import datetime
-from balify import O, o
+from balify import O, o, auth
 
 
 class Product(O):
@@ -9,7 +9,11 @@ class Product(O):
     updated_at: datetime
 
 
-o.serve(Product)
+# # Serve `Product` without auth
+# o.serve(Product)
+
+# Serve `Product` with auth
+o.serve(Product.depends(auth))
 
 
 # FIXME: Remove the expose app code

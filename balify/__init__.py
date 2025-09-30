@@ -28,6 +28,10 @@ except PackageNotFoundError:
     __version__ = "0.0.0"
 
 
+# Constats flags
+auth = "auth"
+
+
 # Read database config from `.env` or envirenment
 class Settings(BaseSettings):  # type: ignore
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
@@ -104,16 +108,30 @@ class O(metaclass=_OMeta):
     """
 
     schema = None  # the schema is SQLModel instance
+    dependencies = []  # router depends
 
     @classmethod
     def serve(cls, *entities) -> None:
         print("--> serve App(%s)" % id(cls._app))
         for entity in entities:
             print("--> Serve entity `%s` in App(%s)" % (str(entity), id(cls._app)))
-            cls._app.include_router(entity.as_router(), prefix="/users")
+            cls._app.include_router(
+                entity.as_router(), prefix=f"/{pluralize(entity.__name__.lower())}"
+            )
 
         # Generate all SQLModel schemas to database
         create_db_and_tables()
+
+    @classmethod
+    def depends(cls, *args, **kwargs):
+        """Depends build-in depends"""
+
+        from .auth import current_active_user
+
+        if auth in args:
+            cls.dependencies = [Depends(current_active_user)]
+
+        return cls
 
     @action()
     def list(self):

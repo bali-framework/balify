@@ -1,7 +1,16 @@
 import re
 from datetime import datetime
 
-from typing import Any, Optional, Type, Union, get_type_hints, get_origin, get_args
+from typing import (
+    Any,
+    Optional,
+    Dict,
+    Type,
+    Union,
+    get_type_hints,
+    get_origin,
+    get_args,
+)
 
 from pydantic import BaseModel
 from sqlmodel import SQLModel, Field
@@ -28,7 +37,7 @@ def pluralize(noun):
 
 
 # TODO: re-check parse_dict usage
-def parse_dict(item: Any, schema: BaseModel = None):
+def parse_dict(item: Any, schema: BaseModel | None = None):
     """Parse model instance, schema, dict to dict"""
     if isinstance(item, dict):
         return item
