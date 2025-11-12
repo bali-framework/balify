@@ -1,3 +1,3 @@
 ```bash
-ba dev
+bali dev
 ```
