@@ -22,3 +22,18 @@
 
 > The framework's conventions are opinionated and follow industry-leading practices.
 > 
+
+### A glance for complete demo App with `product` RESTful APIs
+
+```python
+from datetime import datetime
+from balify import O, o
+
+class Product(O):
+    title: str
+    stock: int
+    create_at: datetime
+    updated_at: datetime
+
+o.serve(Product)
+```
